@@ -25,3 +25,6 @@ Learn and implement Deep learning models using [tensorflow](https://github.com/t
 ### Natural Language Processing
 1. [ ] Recurrent Neural Network
 2. [ ] ...
+
+## License
+This project is licensed under the terms of the MIT license.
