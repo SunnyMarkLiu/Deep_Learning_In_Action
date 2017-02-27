@@ -12,7 +12,7 @@ import progressbar as pbar
 from tensorflow.examples.tutorials.mnist import input_data
 import utils
 
-imagenet_mean = {'R': np.float16(103.939 / 255), 'G': np.float16(116.779 / 255), 'B': np.float16(123.68 / 255)}
+imagenet_mean = {'R': np.float16(103.939), 'G': np.float16(116.779), 'B': np.float16(123.68)}
 
 
 class DataWapper(object):
@@ -75,7 +75,7 @@ class ImageDataTransfer(object):
 
             if j < 3:
                 img = Image.fromarray(im, 'RGB')
-                img.save(str(j)+'.jpg', 'jpeg')
+                img.save(str(j) + '.jpeg', 'jpeg')
         image_bar.finish()
         print('image_reshape:', image_reshape.shape)
 
@@ -88,7 +88,7 @@ def mnist_reshape(target='alexnet'):
     """
     # translate mnist -> alexnet model, vgg_net model
     mnist = input_data.read_data_sets(utils.mnist_dir, one_hot=True)
-    images = mnist.train.images
+    images = mnist.train.images * 255
     labels = mnist.train.labels
 
     target_train_file = utils.train_mnist_2_imagenet_size_file
@@ -111,7 +111,7 @@ def mnist_reshape(target='alexnet'):
     except Exception as e:
         print('Unable to save images:', e)
 
-    images = mnist.test.images
+    images = mnist.test.images * 255
     labels = mnist.test.labels
     image_transfer = ImageDataTransfer(28, 28, images, output_rows, output_cols)
     images_reshape = image_transfer.transfer()
