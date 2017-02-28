@@ -236,5 +236,5 @@ class Vgg16(object):
                         # cnn layer filters
                         else:
                             print('load filter' + op_name)
-                            var = tf.get_variable('c', trainable=False)
+                            var = tf.get_variable('filter', trainable=False)
                             self.sess.run(var.assign(data))
