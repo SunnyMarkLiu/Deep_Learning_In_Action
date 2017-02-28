@@ -5,11 +5,13 @@
 @author: MarkLiu
 @time  : 17-3-6 上午11:38
 """
-import Image
 import h5py
 import numpy as np
 import progressbar as pbar
+from PIL import Image
 from tensorflow.examples.tutorials.mnist import input_data
+import sys
+
 import utils
 
 imagenet_mean = {'R': np.float16(103.939), 'G': np.float16(116.779), 'B': np.float16(123.68)}
@@ -56,26 +58,30 @@ class ImageDataTransfer(object):
     def transfer(self):
         image_reshape = np.ndarray(shape=(self.pre_images.shape[0], self.output_rows, self.output_cols, 3),
                                    dtype=np.float16)
-        images = self.pre_images.reshape(self.pre_images.shape[0], self.pre_img_rows, self.pre_img_cols)
 
         widgets = ['Transfer: ', pbar.Percentage(), ' ', pbar.Bar('>'), ' ', pbar.ETA()]
-        image_bar = pbar.ProgressBar(widgets=widgets, maxval=images.shape[0]).start()
+        image_bar = pbar.ProgressBar(widgets=widgets, maxval=self.pre_images.shape[0]).start()
 
-        for j in range(images.shape[0]):
-            pil_im = Image.fromarray(images[j])
-            im_resize = pil_im.resize((self.output_rows, self.output_cols), Image.ANTIALIAS)
-            im = np.array(im_resize.convert('RGB'), dtype=np.float16)
+        for i in range(0, self.pre_images.shape[0]):
+            image = self.pre_images[i].reshape(self.pre_img_rows, self.pre_img_cols)
+            image = image.astype('uint8')
+            im = Image.fromarray(image)  # monochromatic image
+            imrgb = im.convert('RGB')
+            imrgb = imrgb.resize((self.output_rows, self.output_cols), Image.ANTIALIAS)
+
+            im = np.array(imrgb, dtype=np.float16)
             im[:, :, 0] -= imagenet_mean['R']
             im[:, :, 1] -= imagenet_mean['G']
             im[:, :, 2] -= imagenet_mean['B']
-            # 'RGB'->'BGR'
+            # 'RGB'->'BGR', historical reasons in OpenCV
             im = im[:, :, ::-1]
-            image_reshape[j, :, :, :] = im
-            image_bar.update(j + 1)
+            image_reshape[i] = im
 
-            if j < 3:
-                img = Image.fromarray(im, 'RGB')
-                img.save(str(j) + '.jpeg', 'jpeg')
+            # test for correct convert!
+            # if i < 3:
+            #     img = Image.fromarray(np.uint8(im))
+            #     img.save(str(i) + '.jpeg', 'jpeg')
+            image_bar.update(i + 1)
         image_bar.finish()
         print('image_reshape:', image_reshape.shape)
 
@@ -86,6 +92,7 @@ def mnist_reshape(target='alexnet'):
     """
     mnist 数据集进行reshape, target: alexnet、vggnet
     """
+    print('transform mnist data to ' + target + ' model size...')
     # translate mnist -> alexnet model, vgg_net model
     mnist = input_data.read_data_sets(utils.mnist_dir, one_hot=True)
     images = mnist.train.images * 255
@@ -124,5 +131,11 @@ def mnist_reshape(target='alexnet'):
         print('Unable to save images:', e)
 
 
+def main():
+    target = 'vggnet'
+    if len(sys.argv) > 0:
+        target = sys.argv[0]
+    mnist_reshape(target)
+
 if __name__ == '__main__':
-    mnist_reshape('vggnet')
+    main()
