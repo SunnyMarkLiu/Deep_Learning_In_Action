@@ -133,8 +133,8 @@ def mnist_reshape(target='alexnet'):
 
 def main():
     target = 'vggnet'
-    if len(sys.argv) > 0:
-        target = sys.argv[0]
+    if len(sys.argv) > 1:
+        target = sys.argv[1]
     mnist_reshape(target)
 
 if __name__ == '__main__':
