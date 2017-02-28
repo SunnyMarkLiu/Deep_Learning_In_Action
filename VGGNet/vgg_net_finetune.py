@@ -22,20 +22,21 @@ train_split = 0.85  # training/validation split
 data = h5py.File(utils.train_mnist_2_vggnet_size_file, 'r')
 images = data['images'][:]
 labels = data['labels'][:]
-
+del data
 # split data into training and validation sets
 train_samples = int(len(images) * train_split)
 train_features = images[:train_samples]
-train_labels = labels[:train_samples]
 validation_features = images[train_samples:]
+del images
+train_labels = labels[:train_samples]
 validation_labels = labels[train_samples:]
-
+del labels
 # Parameters
-learning_rate = 0.001
+learning_rate = 0.000001
 training_epochs = 10
-batch_size = 200
+batch_size = 100
 display_step = 1
-train_layers = ['fc7', 'fc8']
+train_layers = ['fc6', 'fc7', 'fc8']
 total_batch = int(train_samples / batch_size)
 
 alexnet = Vgg16(num_classes=num_classes, activation=tf.nn.relu,
