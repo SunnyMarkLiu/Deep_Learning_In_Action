@@ -92,3 +92,10 @@ ENV/
 
 # other
 .idea
+checkpoint/
+input_datas/
+tensorboard/
+checkpoint
+*.meta
+*.index
+*.data*
