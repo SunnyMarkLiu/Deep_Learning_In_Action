@@ -17,6 +17,7 @@ tensorboard_dir = base_dir + 'tensorboard/model_persistence/'
 checkpoint_path = base_dir + 'checkpoint/model_persistence/'
 best_checkpoint_path = checkpoint_path + 'best_checkpoint/'
 data_dir = base_dir + 'input_datas/mnist/'
+saved_model_path = checkpoint_path + 'mnist_model.ckpt'
 
 for path in [data_dir, tensorboard_dir, checkpoint_path, best_checkpoint_path]:
     if not os.path.exists(path):
@@ -58,12 +59,12 @@ def save_model():
                     )
 
     # save model
-    mnist_model.save('mnist_model.ckpt')
+    mnist_model.save(saved_model_path)
 
 
 def load_model():
     mnist_model = build_model()
-    mnist_model.load('mnist_model.ckpt')
+    mnist_model.load(saved_model_path)
 
     # 在加载的模型的基础之上再次训练模型
     mnist_model.fit(X, Y,
