@@ -9,11 +9,11 @@ http://ml.informatik.uni-freiburg.de/_media/teaching/ss10/05_mlps.printer.pdf
 """
 from __future__ import absolute_import, division, print_function
 
-import tensorflow as tf
-from utils import mnist_dir
 import numpy as np
-
+import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
+
+from utils import mnist_dir
 
 
 class MultilayerPerceptron(object):
@@ -131,7 +131,7 @@ class MultilayerPerceptron(object):
         self.sess.run(init_op)
 
 
-if __name__ == '__main__':
+def main():
     print('load datas...')
     mnist = input_data.read_data_sets(mnist_dir, one_hot=True)
 
@@ -163,3 +163,7 @@ if __name__ == '__main__':
     print('Predict...')
     accuracy = multilayer_net.get_accuracy(x=mnist.test.images, y=mnist.test.labels)
     print("accuracy = %.3f" % accuracy)
+
+
+if __name__ == '__main__':
+    main()

@@ -5,7 +5,7 @@
 @author: MarkLiu
 @time  : 17-3-3 下午4:41
 """
-base_dir = '/home/sunnymarkliu/Projects/PycharmProjects/deeplearning_in_action/'
+base_dir = '../'
 tensorboard_dir = base_dir + 'tensorboard/'
 checkpoint_path = base_dir + 'checkpoint/'
 best_checkpoint_path = checkpoint_path + 'best_checkpoint/'
