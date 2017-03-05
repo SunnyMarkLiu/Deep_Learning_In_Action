@@ -13,11 +13,12 @@ Mnist Dataset: http://yann.lecun.com/exdb/mnist/
 """
 from __future__ import absolute_import, division, print_function
 
-import h5py
 import numpy as np
 import tensorflow as tf
-
+import os
+from caffe_classes import class_names
 import utils
+import cv2
 
 
 class Alexnet(object):
@@ -189,8 +190,8 @@ class Alexnet(object):
         分类预测
         """
         feed_dict = {self.x: features_x, self.keep_prob: 1.0}
-        predict_y = self.sess.run(self.predict_op, feed_dict=feed_dict)
-        return predict_y
+        predict_y, prob = self.sess.run([self.predict_op, self.read_out_logits], feed_dict=feed_dict)
+        return predict_y, prob
 
     def train(self, x, y, learning_rate, keep_prob=0.8):
         """
@@ -272,61 +273,36 @@ def generate_batch(features, labels, batch_size):
 
 
 def main():
-    print('load datas...')
 
-    num_classes = 10
-    train_split = 0.85  # training/validation split
-
-    data = h5py.File(utils.reshape_mnist_alexnet_dir, 'r')
-    images = data['images'][:]
-    labels_flat = data['labels'][:]
-    labels = tf.one_hot(labels_flat, num_classes)
-
-    print(type(images))
-    print(images.shape)
-    print(labels.shape)
-
-    # split data into training and validation sets
-    train_samples = int(len(images) * train_split)
-    validation_features = images[train_samples:]
-    validation_labels = labels[train_samples:]
-
-    # Parameters
-    learning_rate = 0.01
-    training_epochs = 10
-    batch_size = 200
-    display_step = 1
-    train_layers = ['fc8', 'fc7']
-
-    total_batch = int(train_samples / batch_size)
-
-    alexnet = Alexnet(num_classes=num_classes, activation=tf.nn.relu,
-                      skip_layer=train_layers, weights_path=utils.pre_trained_alex_model)
+    alexnet = Alexnet(num_classes=1000, activation=tf.nn.relu,
+                      skip_layer=[], weights_path=utils.pre_trained_alex_model)
 
     alexnet.init()
     # Load the pretrained weights into the non-trainable layer
     alexnet.load_initial_weights()
 
-    print('=============================')
-    for epoch in range(0, training_epochs):
-        train_features = images[:train_samples]
-        train_labels = labels[:train_samples]
-        avg_cost = 0.
-        for i in range(0, total_batch):
-            batch_x, batch_y, train_features, train_labels = generate_batch(train_features, train_labels, batch_size)
-            cost = alexnet.train(batch_x, batch_y, learning_rate, 0.8)
-            avg_cost += cost / total_batch
+    # mean of imagenet dataset in BGR
+    imagenet_mean = np.array([104., 117., 124.], dtype=np.float32)
 
-        if epoch % display_step == 0:
-            accuracy = alexnet.get_accuracy(x=validation_features, y=validation_labels)
-            print("Epoch: %04d, train cost = %.9f, validation accuracy = %.5f" % (epoch + 1, avg_cost, accuracy))
-        if epoch % 4 == 0:
-            learning_rate /= 2
+    current_dir = os.getcwd()
+    image_dir = os.path.join(current_dir, 'images')
+    # get list of all images
+    img_files = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.jpeg')]
 
-    print("Training Finished!")
-    # print('Predict...')
-    # accuracy = alexnet.get_accuracy(x=mnist.test.images, y=mnist.test.labels)
-    # print("accuracy = %.5f" % accuracy)
+    # load all images
+    imgs = []
+    for f in img_files:
+        imgs.append(cv2.imread(f))
+
+    for i, image in enumerate(imgs):
+        # Convert image to float32 and resize to (227x227)
+        image = cv2.resize(image.astype(np.float32), (227, 227))
+        # Subtract the ImageNet mean
+        image -= imagenet_mean
+        image = image.reshape((1, 227, 227, 3))
+        predict_y, prob = alexnet.classify(image)
+        class_name = class_names[int(predict_y)]
+        print('image ' + str(i) + ':' + class_name)
 
 
 if __name__ == '__main__':
