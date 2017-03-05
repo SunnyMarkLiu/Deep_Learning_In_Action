@@ -50,7 +50,7 @@ class Alexnet(object):
         # x 获取最后一维的 shape
         input_final_shape = utils.get_incoming_shape(x)[-1]
         w_conv = self.create_weight_variable([filter_size, filter_size, input_final_shape, filters_out_channels],
-                                             name + '_W')
+                                             name + '_w')
         b_conv = self.create_bias_variable([filters_out_channels], name + '_b')
         conv = tf.add(tf.nn.conv2d(x, w_conv, strides=[1, stride, stride, 1], padding='SAME'), b_conv)
         return activation(conv)
@@ -64,7 +64,7 @@ class Alexnet(object):
         """
         return tf.nn.max_pool(x, ksize=[1, ksize, ksize, 1], strides=[1, stride, stride, 1], padding='SAME', name=name)
 
-    def local_response_normalization(self, feature_map, depth_radius, bias, alpha, beta):
+    def local_response_normalization(self, feature_map, depth_radius, bias, alpha, beta, name):
         """
         对卷积输出的 feature map 进行归一化： 将 feature map 中和其他卷积层的同位置的进行 normalize，即平滑处理。
         公式：http://img.blog.csdn.net/20161206153458678
@@ -72,7 +72,7 @@ class Alexnet(object):
         :param depth_radius: 所要 normalize 的深度半径，对应公式中的 n/2
         """
         return tf.nn.local_response_normalization(input=feature_map, depth_radius=depth_radius, bias=bias,
-                                                  alpha=alpha, beta=beta)
+                                                  alpha=alpha, beta=beta, name=name)
 
     def fully_connected(self, incoming, n_units, activation, name):
         """
@@ -111,35 +111,39 @@ class Alexnet(object):
         conv1 = self.conv2d(self.x_image, filter_size=11, filters_out_channels=96, stride=4,
                             activation=self.activation, name='conv1')
         # over-lapping pooling
-        pool1 = self.max_pool(conv1, ksize=3, stride=2, name='pool3')
+        pool1 = self.max_pool(conv1, ksize=3, stride=2, name='pool1')
         # local_response_normalization
-        lrn_1 = self.local_response_normalization(pool1, depth_radius=2.5, bias=2, alpha=0.0001, beta=0.75)
+        lrn_1 = self.local_response_normalization(pool1, depth_radius=2.5, bias=2,
+                                                  alpha=0.0001, beta=0.75, name='norm1')
 
         conv2 = self.conv2d(lrn_1, filter_size=5, filters_out_channels=256, stride=1,
                             activation=self.activation, name='conv2')
         # over-lapping pooling
-        pool2 = self.max_pool(conv2, ksize=3, stride=2, name='pool3')
+        pool2 = self.max_pool(conv2, ksize=3, stride=2, name='pool2')
         # local_response_normalization
-        lrn_2 = self.local_response_normalization(pool2, depth_radius=2.5, bias=2, alpha=0.0001, beta=0.75)
+        lrn_2 = self.local_response_normalization(pool2, depth_radius=2.5, bias=2,
+                                                  alpha=0.0001, beta=0.75, name='norm2')
 
         # 3 conv
-        conv3_1 = self.conv2d(lrn_2, filter_size=3, filters_out_channels=384, stride=1,
-                              activation=self.activation, name='conv3_1')
-        conv3_2 = self.conv2d(conv3_1, filter_size=3, filters_out_channels=384, stride=1,
-                              activation=self.activation, name='conv3_2')
-        conv3_3 = self.conv2d(conv3_2, filter_size=3, filters_out_channels=256, stride=1,
-                              activation=self.activation, name='conv3_3')
-        pool3 = self.max_pool(conv3_3, ksize=3, stride=2, name='pool3')
-        lrn_3 = self.local_response_normalization(pool3, depth_radius=2.5, bias=2, alpha=0.0001, beta=0.75)
+        conv3 = self.conv2d(lrn_2, filter_size=3, filters_out_channels=384, stride=1,
+                            activation=self.activation, name='conv3')
+        conv4 = self.conv2d(conv3, filter_size=3, filters_out_channels=384, stride=1,
+                            activation=self.activation, name='conv4')
+        conv5 = self.conv2d(conv4, filter_size=3, filters_out_channels=256, stride=1,
+                            activation=self.activation, name='conv5')
+        pool5 = self.max_pool(conv5, ksize=3, stride=2, name='pool5')
+        lrn_5 = self.local_response_normalization(pool5, depth_radius=2.5, bias=2,
+                                                  alpha=0.0001, beta=0.75, name='norm5')
 
         # fully-connected layer + dropout
-        full_con_1 = self.fully_connected(lrn_3, 4096, activation=self.activation, name='full_con_1')
-        full_con_2 = self.fully_connected(full_con_1, 4096, activation=self.activation, name='full_con_2')
+        full_con_6 = self.fully_connected(lrn_5, 4096, activation=self.activation, name='fc6')
+        dropout6 = self.dropout(full_con_6, self.keep_prob)
+        full_con_7 = self.fully_connected(dropout6, 4096, activation=self.activation, name='fc7')
 
         # dropout
-        dropout = self.dropout(full_con_2, self.keep_prob)
+        dropout7 = self.dropout(full_con_7, self.keep_prob)
 
-        read_out_digits = self.fully_connected(dropout, self.labels_size, activation=self.activation,
+        read_out_digits = self.fully_connected(dropout7, self.labels_size, activation=self.activation,
                                                name='read_out_digits')
         # softmax
         self.read_out_logits = tf.nn.softmax(read_out_digits)
@@ -197,6 +201,42 @@ class Alexnet(object):
         init_op = tf.global_variables_initializer()
         self.sess.run(init_op)
 
+    def load_initial_weights(self, pre_trained_weight_path, skip_layers=None):
+        """
+        As the weights from http://www.cs.toronto.edu/~guerzhoy/tf_alexnet/ come
+        as a dict of lists (e.g. weights['conv1'] is a list) and not as dict of
+        dicts (e.g. weights['conv1'] is a dict with keys 'weights' & 'biases') we
+        need a special load function
+
+        skip_layers: 指定不进行加载初始化的层的
+        """
+
+        # Load the weights into memory
+        weights_dict = np.load(pre_trained_weight_path, encoding='bytes').item()
+
+        # Loop over all layer names stored in the weights dict
+        for op_name in weights_dict:
+
+            # Check if the layer is one of the layers that should be reinitialized
+            if op_name not in skip_layers:
+                print(op_name)
+                with tf.variable_scope(op_name, reuse=True):
+
+                    # Loop over list of weights/biases and assign them to their corresponding tf variable
+                    for data in weights_dict[op_name]:
+
+                        # Biases
+                        if len(data.shape) == 1:
+
+                            var = tf.get_variable(op_name + '_w', trainable=False)
+                            self.sess.run(var.assign(data))
+
+                        # Weights
+                        else:
+
+                            var = tf.get_variable(op_name + '_b', trainable=False)
+                            self.sess.run(var.assign(data))
+
 
 def main():
     print('load datas...')
@@ -218,6 +258,8 @@ def main():
                       image_width=image_width, image_height=image_height)
 
     alexnet.init()
+    # Load the pretrained weights into the non-trainable layer
+    alexnet.load_initial_weights('bvlc_alexnet.npy')
     for epoch in range(0, training_epochs):
         avg_cost = 0.
         for i in range(0, total_batch):
