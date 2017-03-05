@@ -15,6 +15,7 @@ best_checkpoint_path = checkpoint_path + 'best_checkpoint/'
 
 # datasets
 mnist_dir = base_dir + 'datasets/mnist/'
+reshape_mnist_alexnet_dir = base_dir + 'datasets/mnist/reshape_mnist_alexnet.h5'
 
 # model
 pre_trained_alex_model = '/home/sunnymarkliu/projects/deeplearning/pre_trained_model/bvlc_alexnet.npy'

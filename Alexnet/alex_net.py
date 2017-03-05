@@ -13,11 +13,9 @@ Mnist Dataset: http://yann.lecun.com/exdb/mnist/
 """
 from __future__ import absolute_import, division, print_function
 
-from functools import reduce
-
+import h5py
 import numpy as np
 import tensorflow as tf
-from tensorflow.examples.tutorials.mnist import input_data
 
 import utils
 
@@ -140,6 +138,7 @@ class Alexnet(object):
         self.x = tf.placeholder(tf.float32, shape=[None, 227 * 227], name='input_layer')
         self.y = tf.placeholder(tf.float32, [None, self.NUM_CLASSES], name='output_layer')
 
+        # tf.
         # reshape features to 2d shape
         self.x_image = tf.reshape(self.x, [-1, 227, 227, 1])
 
@@ -256,7 +255,7 @@ class Alexnet(object):
         for op_name in weights_dict:
 
             # Check if the layer is one of the layers that should be reinitialized
-            if skip_layers is None or op_name not in skip_layers:
+            if op_name not in self.SKIP_LAYER:
                 print(op_name)
                 with tf.variable_scope(op_name, reuse=True):
 
@@ -280,13 +279,33 @@ class Alexnet(object):
         return self.sess.run(var)
 
 
+def generate_batch(features, labels, batch_size):
+    batch_indexes = np.random.random_integers(0, len(features) - 1, batch_size)
+    batch_features = features[batch_indexes]
+    batch_labels = labels[batch_indexes]
+
+    features = np.delete(features, batch_indexes, axis=0)
+    labels = np.delete(labels, batch_indexes, axis=0)
+    return batch_features, batch_labels, features, labels
+
+
 def main():
     print('load datas...')
 
-    image_width = 28
-    image_height = 28
     num_classes = 10
-    mnist = input_data.read_data_sets(utils.mnist_dir, one_hot=True)
+    train_split = 0.85  # training/validation split
+
+    data = h5py.File(utils.reshape_mnist_alexnet_dir, 'r')
+    images = data['images'][:]
+    labels_flat = data['labels'][:]
+    labels = tf.one_hot(labels_flat, num_classes)
+
+    # split data into training and validation sets
+    train_samples = int(len(images) * train_split)
+    # train_features = images[:train_samples]
+    # train_labels = labels[:train_samples]
+    validation_features = images[train_samples:]
+    validation_labels = labels[train_samples:]
 
     # Parameters
     learning_rate = 0.01
@@ -295,7 +314,7 @@ def main():
     display_step = 1
     train_layers = ['fc8', 'fc7']
 
-    total_batch = int(mnist.train.num_examples / batch_size)
+    total_batch = int(train_samples / batch_size)
 
     alexnet = Alexnet(num_classes=num_classes, activation=tf.nn.relu,
                       skip_layer=train_layers, weights_path=utils.pre_trained_alex_model)
@@ -303,24 +322,27 @@ def main():
     alexnet.init()
     # Load the pretrained weights into the non-trainable layer
     alexnet.load_initial_weights()
+
     print('=============================')
-    print(alexnet.get_weights('conv1'))
     for epoch in range(0, training_epochs):
+        train_features = images[:train_samples]
+        train_labels = labels[:train_samples]
         avg_cost = 0.
         for i in range(0, total_batch):
-            batch_x, batch_y = mnist.train.next_batch(batch_size)
+            batch_x, batch_y, train_features, train_labels = generate_batch(train_features, train_labels, batch_size)
             cost = alexnet.train(batch_x, batch_y, learning_rate, 0.8)
             avg_cost += cost / total_batch
 
         if epoch % display_step == 0:
-            print("Epoch: %04d, cost=:%.9f" % (epoch + 1, avg_cost))
+            accuracy = alexnet.get_accuracy(x=validation_features, y=validation_labels)
+            print("Epoch: %04d, train cost = %.9f, validation accuracy = %.5f" % (epoch + 1, avg_cost, accuracy))
         if epoch % 4 == 0:
             learning_rate /= 2
 
     print("Training Finished!")
-    print('Predict...')
-    accuracy = alexnet.get_accuracy(x=mnist.test.images, y=mnist.test.labels)
-    print("accuracy = %.5f" % accuracy)
+    # print('Predict...')
+    # accuracy = alexnet.get_accuracy(x=mnist.test.images, y=mnist.test.labels)
+    # print("accuracy = %.5f" % accuracy)
 
 
 if __name__ == '__main__':
