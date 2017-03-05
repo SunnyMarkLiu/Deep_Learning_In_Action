@@ -35,15 +35,6 @@ class Alexnet(object):
         else:
             self.WEIGHTS_PATH = weights_path
 
-    def create_weight_variable(self, shape, name):
-        with tf.variable_scope(name) as scope:
-            initial = tf.truncated_normal(shape, stddev=0.01)
-            return tf.Variable(initial, name=name)
-
-    def create_bias_variable(self, shape, name):
-        initial = tf.constant(np.random.rand(), shape=shape)
-        return tf.Variable(initial, name=name)
-
     def conv2d(self, x, filter_height, filter_width, num_filters, stride_y, stride_x,
                name, padding='SAME', groups=1):
         """
@@ -82,10 +73,10 @@ class Alexnet(object):
                 conv = tf.concat(axis=3, values=output_groups)
 
             # Add biases
-            bias = tf.reshape(tf.nn.bias_add(conv, biases), conv.get_shape().as_list())
+            conv_bias = tf.nn.bias_add(conv, biases)
 
             # Apply activation function
-            relu = self.ACTIVATION(bias, name=scope.name)
+            relu = self.ACTIVATION(conv_bias, name=scope.name)
 
             return relu
 
@@ -135,21 +126,17 @@ class Alexnet(object):
         构建模型
         """
         # input features
-        self.x = tf.placeholder(tf.float32, shape=[None, 227 * 227], name='input_layer')
+        self.x = tf.placeholder(tf.float32, shape=[None, 227, 227, 3], name='input_layer')
         self.y = tf.placeholder(tf.float32, [None, self.NUM_CLASSES], name='output_layer')
-
-        # tf.
-        # reshape features to 2d shape
-        self.x_image = tf.reshape(self.x, [-1, 227, 227, 1])
 
         # learning_rate placeholder
         self.learning_rate = tf.placeholder(tf.float32, name='learning_rate')
         # dropout layer: keep probability
-        self.keep_prob = tf.placeholder(tf.float32)
+        self.keep_prob = tf.placeholder(tf.float32, name='keep_prob')
 
         # build model
         # 1st Layer: Conv (w ReLu) -> Pool -> Lrn
-        conv1 = self.conv2d(self.x_image, 11, 11, 96, 4, 4, padding='VALID', name='conv1')
+        conv1 = self.conv2d(self.x, 11, 11, 96, 4, 4, padding='VALID', name='conv1')
         # over-lapping pooling
         pool1 = self.max_pool(conv1, 3, 3, 2, 2, padding='VALID', name='pool1')
         # local_response_normalization
@@ -205,12 +192,12 @@ class Alexnet(object):
         predict_y = self.sess.run(self.predict_op, feed_dict=feed_dict)
         return predict_y
 
-    def train(self, features_x, y, learning_rate, keep_prob=0.8):
+    def train(self, x, y, learning_rate, keep_prob=0.8):
         """
         训练
         """
         feed_dict = {
-            self.x: features_x,
+            self.x: x,
             self.y: y,
             self.keep_prob: keep_prob,
             self.learning_rate: learning_rate
@@ -250,13 +237,11 @@ class Alexnet(object):
         # Load the weights into memory
         weights_dict = np.load(self.WEIGHTS_PATH, encoding='bytes').item()
 
-        print(weights_dict['conv1'])
         # Loop over all layer names stored in the weights dict
         for op_name in weights_dict:
 
             # Check if the layer is one of the layers that should be reinitialized
             if op_name not in self.SKIP_LAYER:
-                print(op_name)
                 with tf.variable_scope(op_name, reuse=True):
 
                     # Loop over list of weights/biases and assign them to their corresponding tf variable
@@ -274,10 +259,6 @@ class Alexnet(object):
                             var = tf.get_variable('weights', trainable=False)
                             self.sess.run(var.assign(data))
 
-    def get_weights(self, layer_name):
-        var = tf.get_variable(layer_name + '_w')
-        return self.sess.run(var)
-
 
 def generate_batch(features, labels, batch_size):
     batch_indexes = np.random.random_integers(0, len(features) - 1, batch_size)
@@ -286,6 +267,7 @@ def generate_batch(features, labels, batch_size):
 
     features = np.delete(features, batch_indexes, axis=0)
     labels = np.delete(labels, batch_indexes, axis=0)
+
     return batch_features, batch_labels, features, labels
 
 
@@ -300,10 +282,12 @@ def main():
     labels_flat = data['labels'][:]
     labels = tf.one_hot(labels_flat, num_classes)
 
+    print(type(images))
+    print(images.shape)
+    print(labels.shape)
+
     # split data into training and validation sets
     train_samples = int(len(images) * train_split)
-    # train_features = images[:train_samples]
-    # train_labels = labels[:train_samples]
     validation_features = images[train_samples:]
     validation_labels = labels[train_samples:]
 
