@@ -8,12 +8,16 @@
 import numpy as np
 import tensorflow as tf
 
-base_dir = '../'
+base_dir = '/home/sunnymarkliu/projects/deeplearning/'
 tensorboard_dir = base_dir + 'tensorboard/'
 checkpoint_path = base_dir + 'checkpoint/'
 best_checkpoint_path = checkpoint_path + 'best_checkpoint/'
-mnist_dir = base_dir + 'input_datas/mnist/'
-oxflower17_dir = base_dir + 'input_datas/oxflower17/'
+
+# datasets
+mnist_dir = base_dir + 'datasets/mnist/'
+
+# model
+pre_trained_alex_model = '/home/sunnymarkliu/projects/deeplearning/pre_trained_model/bvlc_alexnet.npy'
 
 
 def get_incoming_shape(incoming):
