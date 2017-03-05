@@ -13,11 +13,13 @@ Mnist Dataset: http://yann.lecun.com/exdb/mnist/
 """
 from __future__ import absolute_import, division, print_function
 
+from functools import reduce
+
 import numpy as np
 import tensorflow as tf
-import utils
-from functools import reduce
 from tensorflow.examples.tutorials.mnist import input_data
+
+import utils
 
 
 class Alexnet(object):
@@ -210,10 +212,11 @@ class Alexnet(object):
 
         skip_layers: 指定不进行加载初始化的层的
         """
-
+        print('Load the pretrained weights into the non-trainable layer...')
         # Load the weights into memory
         weights_dict = np.load(pre_trained_weight_path, encoding='bytes').item()
 
+        print(weights_dict['conv1'])
         # Loop over all layer names stored in the weights dict
         for op_name in weights_dict:
 
@@ -227,15 +230,19 @@ class Alexnet(object):
 
                         # Biases
                         if len(data.shape) == 1:
-
-                            var = tf.get_variable(op_name + '_w', trainable=False)
+                            print('load bias' + op_name)
+                            var = tf.get_variable(op_name + '_b', trainable=False)
                             self.sess.run(var.assign(data))
 
                         # Weights
                         else:
-
-                            var = tf.get_variable(op_name + '_b', trainable=False)
+                            print('load Weights' + op_name)
+                            var = tf.get_variable(op_name + '_w', trainable=False)
                             self.sess.run(var.assign(data))
+
+    def get_weights(self, layer_name):
+        var = tf.get_variable(layer_name + '_w')
+        return self.sess.run(var)
 
 
 def main():
@@ -260,6 +267,8 @@ def main():
     alexnet.init()
     # Load the pretrained weights into the non-trainable layer
     alexnet.load_initial_weights('bvlc_alexnet.npy')
+    print('=============================')
+    print(alexnet.get_weights('conv1'))
     for epoch in range(0, training_epochs):
         avg_cost = 0.
         for i in range(0, total_batch):
