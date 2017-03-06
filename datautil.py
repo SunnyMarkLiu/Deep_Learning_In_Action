@@ -78,18 +78,32 @@ class ImageDataTransfer(object):
         return image_reshape
 
 
-def mnist_2_imagenet_size():
+def mnist_reshape(target='alexnet'):
+    """
+    mnist 数据集进行reshape, target: alexnet、vggnet
+    """
     # translate mnist -> alexnet model, vgg_net model
     mnist = input_data.read_data_sets(utils.mnist_dir, one_hot=True)
     images = mnist.train.images
     labels = mnist.train.labels
-    imagenet_transfer = ImageDataTransfer(28, 28, images, 227, 227)
+
+    target_train_file = utils.train_mnist_2_imagenet_size_file
+    target_test_file = utils.test_mnist_2_imagenet_size_file
+    output_rows = 227
+    output_cols = 227
+    if target == 'vggnet':
+        output_rows = 224
+        output_cols = 224
+        target_train_file = utils.train_mnist_2_vggnet_size_file
+        target_test_file = utils.test_mnist_2_vggnet_size_file
+
+    imagenet_transfer = ImageDataTransfer(28, 28, images, output_rows, output_cols)
     images_reshape = imagenet_transfer.transfer()
     try:
-        with h5py.File(utils.train_mnist_2_imagenet_size_file, 'w') as f:
+        with h5py.File(target_train_file, 'w') as f:
             f.create_dataset('images', data=images_reshape)
             f.create_dataset('labels', data=labels)
-            print('Save transformed images to ' + utils.train_mnist_2_imagenet_size_file)
+            print('Save transformed images to ' + target_train_file)
     except Exception as e:
         print('Unable to save images:', e)
 
@@ -98,12 +112,13 @@ def mnist_2_imagenet_size():
     imagenet_transfer = ImageDataTransfer(28, 28, images, 227, 227)
     images_reshape = imagenet_transfer.transfer()
     try:
-        with h5py.File(utils.test_mnist_2_imagenet_size_file, 'w') as f:
+        with h5py.File(target_test_file, 'w') as f:
             f.create_dataset('images', data=images_reshape)
             f.create_dataset('labels', data=labels)
-            print('Save transformed images to ' + utils.test_mnist_2_imagenet_size_file)
+            print('Save transformed images to ' + target_test_file)
     except Exception as e:
         print('Unable to save images:', e)
 
+
 if __name__ == '__main__':
-    mnist_2_imagenet_size()
+    mnist_reshape('vggnet')
