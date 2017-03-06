@@ -19,13 +19,3 @@ reshape_mnist_alexnet_dir = base_dir + 'datasets/mnist/reshape_mnist_alexnet.h5'
 
 # model
 pre_trained_alex_model = '/home/sunnymarkliu/projects/deeplearning/pre_trained_model/bvlc_alexnet.npy'
-
-
-def get_incoming_shape(incoming):
-    """ Returns the incoming data shape """
-    if isinstance(incoming, tf.Tensor):
-        return incoming.get_shape().as_list()
-    elif type(incoming) in [np.array, list, tuple]:
-        return np.shape(incoming)
-    else:
-        raise Exception("Invalid incoming layer.")
