@@ -19,12 +19,12 @@ print('load datas...')
 num_classes = 10
 train_split = 0.85  # training/validation split
 
-data = h5py.File(utils.reshape_mnist_alexnet_dir, 'r')
+data = h5py.File(utils.train_mnist_2_imagenet_size_file, 'r')
 images = data['images'][:]
-labels_flat = data['labels'][:]
-sess = tf.Session()
-labels = sess.run(tf.one_hot(labels_flat, num_classes))
-
+labels = data['labels'][:]
+data = h5py.File(utils.test_mnist_2_imagenet_size_file, 'r')
+test_images = data['images'][:]
+test_labels = data['labels'][:]
 print('load datas done!')
 
 # split data into training and validation sets
@@ -69,3 +69,5 @@ for epoch in range(0, training_epochs):
 
 print('Train end ...')
 print('Predict ...')
+predict_accuracy = alexnet.get_accuracy(x=test_images, y=test_labels)
+print('predict_accuracy = %.5f' % predict_accuracy)
