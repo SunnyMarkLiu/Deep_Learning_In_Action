@@ -33,7 +33,7 @@ validation_labels = labels[train_samples:]
 # Parameters
 learning_rate = 0.001
 training_epochs = 10
-batch_size = 128
+batch_size = 200
 display_step = 1
 train_layers = ['fc8', 'fc7']
 total_batch = int(train_samples / batch_size)
@@ -54,10 +54,10 @@ for epoch in range(0, training_epochs):
         batch_x, batch_y = train_datas.next_batch(batch_size)
         train_loss, train_accuracy = alexnet.train(batch_x, batch_y, learning_rate, keep_prob=0.8)
         avg_loss += train_loss / total_batch
-        print("train loss = %.9f, train accuracy = %.5f" % (avg_loss, train_accuracy))
+        print("train loss = %.9f, train accuracy = %.5f" % (train_loss, train_accuracy))
 
     if epoch % display_step == 0:
-        batch_x, batch_y = validate_datas.next_batch(batch_size * 5)
+        batch_x, batch_y = validate_datas.next_batch(batch_size * 2)
         accuracy = alexnet.get_accuracy(x=batch_x, y=batch_y)
         print("Epoch: %04d, train loss = %.9f, validation accuracy = %.5f" % (epoch + 1, avg_loss, accuracy))
     if epoch % 4 == 0:
