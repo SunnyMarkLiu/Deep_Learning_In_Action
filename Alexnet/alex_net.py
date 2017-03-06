@@ -26,6 +26,7 @@ class Alexnet(object):
                  weights_path='DEFAULT'):
         self.NUM_CLASSES = num_classes
         self.ACTIVATION = activation
+        # 指定跳过加载 pre-trained weight 层
         self.SKIP_LAYER = skip_layer
         if weights_path == 'DEFAULT':
             self.WEIGHTS_PATH = 'bvlc_alexnet.npy'
@@ -40,6 +41,7 @@ class Alexnet(object):
         :param x: [batch, in_height, in_width, in_channels]
         :param num_filters: filters 的数目,[filter_height, filter_width, in_channels, out_channels]
         :param stride_y, stride_x: 每一维度滑动的步长,strides[0]=strides[3]=1
+        :param groups: groups的作用其实是为了论文中并行加速中使用的，实际可简化
         """
         # Get number of input channels
         input_channels = int(x.get_shape()[-1])
@@ -199,8 +201,9 @@ class Alexnet(object):
             self.keep_prob: keep_prob,
             self.learning_rate: learning_rate
         }
-        _, loss = self.sess.run([self.training_op, self.loss_function], feed_dict=feed_dict)
-        return loss
+        _, train_loss = self.sess.run([self.training_op, self.loss_function], feed_dict=feed_dict)
+        train_accuracy = self.get_accuracy(x, y)
+        return train_loss, train_accuracy
 
     def get_accuracy(self, x, y):
         """
@@ -228,7 +231,6 @@ class Alexnet(object):
         dicts (e.g. weights['conv1'] is a dict with keys 'weights' & 'biases') we
         need a special load function
 
-        skip_layers: 指定不进行加载初始化的层的
         """
         print('Load the pretrained weights into the non-trainable layer...')
         # Load the weights into memory
