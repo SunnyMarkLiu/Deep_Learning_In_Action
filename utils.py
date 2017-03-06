@@ -5,9 +5,6 @@
 @author: MarkLiu
 @time  : 17-3-3 下午4:41
 """
-import numpy as np
-import tensorflow as tf
-
 base_dir = '/home/sunnymarkliu/projects/deeplearning/'
 tensorboard_dir = base_dir + 'tensorboard/'
 checkpoint_path = base_dir + 'checkpoint/'
