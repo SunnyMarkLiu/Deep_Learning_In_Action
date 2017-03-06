@@ -12,7 +12,7 @@ import progressbar as pbar
 from tensorflow.examples.tutorials.mnist import input_data
 import utils
 
-imagenet_mean = {'R': 103.939, 'G': '116.779', 'B': 123.68}
+imagenet_mean = {'R': np.float16(103.939), 'G': np.float16('116.779'), 'B': np.float16(123.68)}
 
 
 class DataWapper(object):
@@ -83,10 +83,11 @@ def mnist_2_imagenet_size():
     mnist = input_data.read_data_sets(utils.mnist_dir, one_hot=True)
     images = mnist.train.images
     labels = mnist.train.labels
-    imagenet_reshape = ImageDataTransfer(28, 28, images, 227, 227)
+    imagenet_transfer = ImageDataTransfer(28, 28, images, 227, 227)
+    images_reshape = imagenet_transfer.transfer()
     try:
-        with h5py.File('train_'+utils.train_mnist_2_imagenet_size_file, 'w') as f:
-            f.create_dataset('images', data=imagenet_reshape)
+        with h5py.File(utils.train_mnist_2_imagenet_size_file, 'w') as f:
+            f.create_dataset('images', data=images_reshape)
             f.create_dataset('labels', data=labels)
             print('Save transformed images to ' + utils.train_mnist_2_imagenet_size_file)
     except Exception as e:
@@ -94,10 +95,11 @@ def mnist_2_imagenet_size():
 
     images = mnist.test.images
     labels = mnist.test.labels
-    imagenet_reshape = ImageDataTransfer(28, 28, images, 227, 227)
+    imagenet_transfer = ImageDataTransfer(28, 28, images, 227, 227)
+    images_reshape = imagenet_transfer.transfer()
     try:
         with h5py.File(utils.test_mnist_2_imagenet_size_file, 'w') as f:
-            f.create_dataset('images', data=imagenet_reshape)
+            f.create_dataset('images', data=images_reshape)
             f.create_dataset('labels', data=labels)
             print('Save transformed images to ' + utils.test_mnist_2_imagenet_size_file)
     except Exception as e:
