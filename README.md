@@ -10,7 +10,7 @@ Learn and implement Deep learning models using [tensorflow](https://github.com/t
 1. [x] [Multilayer Perceptron](https://github.com/SunnyMarkLiu/deeplearning_in_action/tree/master/Multi-layer%20perceptron)
 2. [x] [Convolutional Neural Network](https://github.com/SunnyMarkLiu/deeplearning_in_action/tree/master/Basic%20CNN)
 3. [x] [Alexnet](https://github.com/SunnyMarkLiu/deeplearning_in_action/tree/master/Alexnet)
-4. [ ] VGGNet
+4. [x] [VGGNet](https://github.com/SunnyMarkLiu/deeplearning_in_action/tree/master/VGGNet)
 5. [ ] Google Inception Net
 6. [ ] Network in Network
 7. [ ] Auto Encoder
