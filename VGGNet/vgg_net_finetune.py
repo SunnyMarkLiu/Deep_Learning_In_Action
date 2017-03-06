@@ -39,7 +39,7 @@ train_layers = ['fc6', 'fc7', 'fc8']
 total_batch = int(train_samples / batch_size)
 
 alexnet = Vgg16(num_classes=num_classes, activation=tf.nn.relu,
-                skip_layer=train_layers, weights_path=utils.pre_trained_alex_model)
+                skip_layer=train_layers, weights_path=utils.pre_trained_vgg16_model)
 alexnet.init()
 alexnet.load_initial_weights()
 

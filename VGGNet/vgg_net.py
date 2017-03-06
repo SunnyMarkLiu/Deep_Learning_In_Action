@@ -44,7 +44,7 @@ class Vgg16(object):
         input_channels = int(x.get_shape()[-1])
         with tf.variable_scope(name) as scope:
             # Create tf variables for the weights and biases of the conv layer
-            weights = tf.get_variable('weights',
+            weights = tf.get_variable('filter',
                                       shape=[filter_height, filter_width, input_channels, num_filters])
             biases = tf.get_variable('biases', shape=[num_filters])
             conv = tf.nn.conv2d(x, weights,
@@ -203,8 +203,8 @@ class Vgg16(object):
 
     def load_initial_weights(self):
         """
-        As the weights from http://www.cs.toronto.edu/~guerzhoy/tf_alexnet/ come
-        as a dict of lists (e.g. weights['conv1'] is a list) and not as dict of
+        As the weights from https://mega.nz/#!YU1FWJrA!O1ywiCS2IiOlUCtCpI6HTJOMrneN-Qdv3ywQP5poecM come
+        as a dict of lists (e.g. weights['conv1_1'] is a list) and not as dict of
         dicts (e.g. weights['conv1'] is a dict with keys 'weights' & 'biases') we
         need a special load function
 
@@ -236,5 +236,5 @@ class Vgg16(object):
                         # cnn layer filters
                         else:
                             print('load filter' + op_name)
-                            var = tf.get_variable('filter', trainable=False)
+                            var = tf.get_variable('c', trainable=False)
                             self.sess.run(var.assign(data))
