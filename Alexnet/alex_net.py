@@ -15,10 +15,6 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 import tensorflow as tf
-import os
-from caffe_classes import class_names
-import utils
-import cv2
 
 
 class Alexnet(object):
@@ -259,51 +255,3 @@ class Alexnet(object):
                             print('load Weights' + op_name)
                             var = tf.get_variable('weights', trainable=False)
                             self.sess.run(var.assign(data))
-
-
-def generate_batch(features, labels, batch_size):
-    batch_indexes = np.random.random_integers(0, len(features) - 1, batch_size)
-    batch_features = features[batch_indexes]
-    batch_labels = labels[batch_indexes]
-
-    features = np.delete(features, batch_indexes, axis=0)
-    labels = np.delete(labels, batch_indexes, axis=0)
-
-    return batch_features, batch_labels, features, labels
-
-
-def main():
-
-    alexnet = Alexnet(num_classes=1000, activation=tf.nn.relu,
-                      skip_layer=[], weights_path=utils.pre_trained_alex_model)
-
-    alexnet.init()
-    # Load the pretrained weights into the non-trainable layer
-    alexnet.load_initial_weights()
-
-    # mean of imagenet dataset in BGR
-    imagenet_mean = np.array([104., 117., 124.], dtype=np.float32)
-
-    current_dir = os.getcwd()
-    image_dir = os.path.join(current_dir, 'images')
-    # get list of all images
-    img_files = [os.path.join(image_dir, f) for f in os.listdir(image_dir) if f.endswith('.jpeg')]
-
-    # load all images
-    imgs = []
-    for f in img_files:
-        imgs.append(cv2.imread(f))
-
-    for i, image in enumerate(imgs):
-        # Convert image to float32 and resize to (227x227)
-        image = cv2.resize(image.astype(np.float32), (227, 227))
-        # Subtract the ImageNet mean
-        image -= imagenet_mean
-        image = image.reshape((1, 227, 227, 3))
-        predict_y, prob = alexnet.classify(image)
-        class_name = class_names[int(predict_y)]
-        print('image ' + str(i) + ':' + class_name)
-
-
-if __name__ == '__main__':
-    main()
