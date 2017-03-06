@@ -12,7 +12,7 @@ import progressbar as pbar
 from tensorflow.examples.tutorials.mnist import input_data
 import utils
 
-imagenet_mean = {'R': np.float16(103.939), 'G': np.float16('116.779'), 'B': np.float16(123.68)}
+imagenet_mean = {'R': np.float16(103.939 / 255), 'G': np.float16(116.779 / 255), 'B': np.float16(123.68 / 255)}
 
 
 class DataWapper(object):
@@ -72,6 +72,10 @@ class ImageDataTransfer(object):
             im = im[:, :, ::-1]
             image_reshape[j, :, :, :] = im
             image_bar.update(j + 1)
+
+            if j < 3:
+                img = Image.fromarray(im, 'RGB')
+                img.save(str(j)+'.jpg', 'jpeg')
         image_bar.finish()
         print('image_reshape:', image_reshape.shape)
 
@@ -97,8 +101,8 @@ def mnist_reshape(target='alexnet'):
         target_train_file = utils.train_mnist_2_vggnet_size_file
         target_test_file = utils.test_mnist_2_vggnet_size_file
 
-    imagenet_transfer = ImageDataTransfer(28, 28, images, output_rows, output_cols)
-    images_reshape = imagenet_transfer.transfer()
+    image_transfer = ImageDataTransfer(28, 28, images, output_rows, output_cols)
+    images_reshape = image_transfer.transfer()
     try:
         with h5py.File(target_train_file, 'w') as f:
             f.create_dataset('images', data=images_reshape)
@@ -109,8 +113,8 @@ def mnist_reshape(target='alexnet'):
 
     images = mnist.test.images
     labels = mnist.test.labels
-    imagenet_transfer = ImageDataTransfer(28, 28, images, 227, 227)
-    images_reshape = imagenet_transfer.transfer()
+    image_transfer = ImageDataTransfer(28, 28, images, output_rows, output_cols)
+    images_reshape = image_transfer.transfer()
     try:
         with h5py.File(target_test_file, 'w') as f:
             f.create_dataset('images', data=images_reshape)
