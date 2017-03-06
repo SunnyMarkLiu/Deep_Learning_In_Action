@@ -14,7 +14,7 @@ import utils
 from alex_net import Alexnet
 from datautil import DataWapper
 
-print('load datas...')
+print('load train datas...')
 
 num_classes = 10
 train_split = 0.85  # training/validation split
@@ -22,10 +22,6 @@ train_split = 0.85  # training/validation split
 data = h5py.File(utils.train_mnist_2_imagenet_size_file, 'r')
 images = data['images'][:]
 labels = data['labels'][:]
-data = h5py.File(utils.test_mnist_2_imagenet_size_file, 'r')
-test_images = data['images'][:]
-test_labels = data['labels'][:]
-print('load datas done!')
 
 # split data into training and validation sets
 train_samples = int(len(images) * train_split)
@@ -67,7 +63,12 @@ for epoch in range(0, training_epochs):
     if epoch % 4 == 0:
         learning_rate /= 2
 
-print('Train end ...')
+print('Train end.')
 print('Predict ...')
+print('load test datas...')
+data = h5py.File(utils.test_mnist_2_imagenet_size_file, 'r')
+test_images = data['images'][:]
+test_labels = data['labels'][:]
+print('load datas done!')
 predict_accuracy = alexnet.get_accuracy(x=test_images, y=test_labels)
 print('predict_accuracy = %.5f' % predict_accuracy)
