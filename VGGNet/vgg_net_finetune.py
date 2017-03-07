@@ -36,7 +36,7 @@ learning_rate = 0.000001
 training_epochs = 10
 batch_size = 100
 display_step = 1
-train_layers = ['fc6', 'fc7', 'fc8']
+train_layers = ['fc7', 'fc8']
 total_batch = int(train_samples / batch_size)
 
 alexnet = Vgg16(num_classes=num_classes, activation=tf.nn.relu,
