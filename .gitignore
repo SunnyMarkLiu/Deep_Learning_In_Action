@@ -100,3 +100,4 @@ checkpoint
 *.index
 *.data*
 *.npy
+*.ckpt

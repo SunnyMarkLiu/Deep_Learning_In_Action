@@ -18,5 +18,9 @@ train_mnist_2_vggnet_size_file = base_dir + 'datasets/mnist/train_mnist_2_vggnet
 test_mnist_2_vggnet_size_file = base_dir + 'datasets/mnist/test_mnist_2_vggnet_size.h5'
 
 # model
-pre_trained_alex_model = '/home/sunnymarkliu/projects/deeplearning/pre_trained_model/bvlc_alexnet.npy'
-pre_trained_vgg16_model = '/home/sunnymarkliu/projects/deeplearning/pre_trained_model/vgg16.npy'
+pre_trained_alex_model = base_dir + 'pre_trained_model/bvlc_alexnet.npy'
+pre_trained_vgg16_model = base_dir + 'pre_trained_model/vgg16.npy'
+pre_trained_inception_v1_model = base_dir + 'pre_trained_model/inception_v1.ckpt'
+pre_trained_inception_v2_model = base_dir + 'pre_trained_model/inception_v2.ckpt'
+pre_trained_inception_v3_model = base_dir + 'pre_trained_model/inception_v3.ckpt'
+pre_trained_inception_v4_model = base_dir + 'pre_trained_model/inception_v4.ckpt'
