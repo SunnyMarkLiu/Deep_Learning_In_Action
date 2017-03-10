@@ -17,7 +17,7 @@ print('load train datas...')
 num_classes = 10
 train_split = 0.85  # training/validation split
 
-data = h5py.File(utils.train_mnist_2_imagenet_size_file, 'r')
+data = h5py.File(utils.train_mnist_2_vggnet_size_file, 'r')
 images = data['images'][:]
 labels = data['labels'][:]
 
@@ -36,7 +36,8 @@ display_step = 1
 train_layers = ['beta1_power', 'beta2_power', 'fc8', 'fc7']
 total_batch = int(train_samples / batch_size)
 
-inceptionv1 = GoogleInceptionV1(num_classes=num_classes, skip_layer=train_layers)
+inceptionv1 = GoogleInceptionV1(num_classes=num_classes, skip_layer=train_layers,
+                                pre_trained_model_cpkt=utils.pre_trained_inception_v1_model)
 inceptionv1.init()
 inceptionv1.load_pretrained_model()
 
@@ -61,11 +62,11 @@ for epoch in range(0, training_epochs):
         learning_rate /= 2
 
 print('Train end.')
-# print('Predict ...')
-# print('load test datas...')
-# data = h5py.File(utils.test_mnist_2_imagenet_size_file, 'r')
-# test_images = data['images'][:]
-# test_labels = data['labels'][:]
-# print('load datas done!')
-# predict_accuracy = inceptionv1.get_accuracy(x=test_images, y=test_labels)
-# print('predict_accuracy = %.5f' % predict_accuracy)
+print('Predict ...')
+print('load test datas...')
+data = h5py.File(utils.test_mnist_2_imagenet_size_file, 'r')
+test_images = data['images'][:]
+test_labels = data['labels'][:]
+print('load datas done!')
+predict_accuracy = inceptionv1.get_accuracy(x=test_images, y=test_labels)
+print('predict_accuracy = %.5f' % predict_accuracy)

@@ -26,14 +26,14 @@ class GoogleInceptionV1(object):
     Google Inception V1 model
     """
 
-    def __init__(self, num_classes, skip_layer, pre_trained_model='DEFAULT'):
+    def __init__(self, num_classes, skip_layer, pre_trained_model_cpkt='DEFAULT'):
         self.num_classes = num_classes
         # 指定跳过加载 pre-trained 层
         self.skip_layer = skip_layer
-        if pre_trained_model == 'DEFAULT':
-            self.pre_trained_model = './inception_v1.ckpt'
+        if pre_trained_model_cpkt == 'DEFAULT':
+            self.pre_trained_model_cpkt = './inception_v1.ckpt'
         else:
-            self.pre_trained_model = pre_trained_model
+            self.pre_trained_model_cpkt = pre_trained_model_cpkt
 
     def inception_v1_base(self, inputs, final_endpoint='Mixed_5c', scope='InceptionV1'):
         """
@@ -359,9 +359,10 @@ class GoogleInceptionV1(object):
         :return:
         """
         print('Load the pretrained weights into the non-trainable layer...')
-        trainable_variables = slim.get_trainable_variables()
+        from tensorflow.python.framework import ops
+        trainable_variables = slim.get_variables(None, None, ops.GraphKeys.TRAINABLE_VARIABLES)
 
-        reader = pywrap_tensorflow.NewCheckpointReader('./inception_v1.ckpt')
+        reader = pywrap_tensorflow.NewCheckpointReader(self.pre_trained_model_cpkt)
         pretrained_model_variables = reader.get_variable_to_shape_map()
         for variable in trainable_variables:
             variable_name = variable.name.split(':')[0]
@@ -369,6 +370,7 @@ class GoogleInceptionV1(object):
                 continue
             if variable_name not in pretrained_model_variables:
                 continue
+            print('load ' + variable_name)
             with tf.variable_scope('', reuse=True):
                 var = tf.get_variable(variable_name, trainable=False)
                 data = reader.get_tensor(variable_name)
