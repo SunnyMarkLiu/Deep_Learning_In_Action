@@ -351,7 +351,6 @@ class GoogleInceptionV1(object):
         self.sess = tf.Session()
         init_op = tf.global_variables_initializer()
         self.sess.run(init_op)
-        self.load_pretrained_model()
 
     def load_pretrained_model(self):
         """
