@@ -6,13 +6,11 @@ Google Inception V1 model implementation example using TensorFlow library.
 
 Inception V1 Paper: Going Deeper with Convolutions(https://arxiv.org/abs/1409.4842)
 
-Mnist Dataset: http://yann.lecun.com/exdb/mnist/
-
 Pre-trained model layers infor：
 ['Conv2d_1a_7x7', 'MaxPool_2a_3x3', 'Conv2d_2b_1x1',
-      'Conv2d_2c_3x3', 'MaxPool_3a_3x3', 'Mixed_3b', 'Mixed_3c',
-      'MaxPool_4a_3x3', 'Mixed_4b', 'Mixed_4c', 'Mixed_4d', 'Mixed_4e',
-      'Mixed_4f', 'MaxPool_5a_2x2', 'Mixed_5b', 'Mixed_5c']
+  'Conv2d_2c_3x3', 'MaxPool_3a_3x3', 'Mixed_3b', 'Mixed_3c',
+  'MaxPool_4a_3x3', 'Mixed_4b', 'Mixed_4c', 'Mixed_4d', 'Mixed_4e',
+  'Mixed_4f', 'MaxPool_5a_2x2', 'Mixed_5b', 'Mixed_5c']
 
 @author: MarkLiu
 @time  : 17-3-8 下午1:35
@@ -32,13 +30,14 @@ class GoogleInceptionV1(object):
         # 指定跳过加载 pre-trained 层
         self.skip_layer = skip_layer
         if pre_trained_model == 'DEFAULT':
-            self.pre_trained_model = 'vgg16.npy'
+            self.pre_trained_model = 'inception_v1.ckpt'
         else:
             self.pre_trained_model = pre_trained_model
 
     def inception_v1_base(self, inputs, final_endpoint='Mixed_5c', scope='InceptionV1'):
         """
         flexible inception v1 base model. Extract softmax layer outside the inception_base
+        https://github.com/tensorflow/tensorflow/blob/master/tensorflow/contrib/slim/python/slim/nets/inception_v1.py
         :param inputs: a tensor of size [batch_size, height, width, channels].
         :param final_endpoint: final out put layer
                             ['Conv2d_1a_7x7', 'MaxPool_2a_3x3', 'Conv2d_2b_1x1',
@@ -281,7 +280,7 @@ class GoogleInceptionV1(object):
                     if final_endpoint == end_point:
                         return net, ent_point_nets
 
-                    # softmax 2
+                        # softmax 2
 
                 raise ValueError('Unknown final endpoint %s' % final_endpoint)
 
@@ -303,8 +302,63 @@ class GoogleInceptionV1(object):
             with tf.variable_scope('Logits'):
                 net = slim.avg_pool2d(net, kernel_size=[7, 7], str=1, scope='MaxPool_0a_7x7')
                 net = slim.dropout(net, self.keep_prob, scope='Dropout_0b')
-                logits = slim.fully_connected(net, num_outputs=1024)
-                ent_point_nets['Logits'] = logits
-                ent_point_nets['Predictions'] = prediction_fn(logits, scope='Predictions')
+                self.logits = slim.fully_connected(net, num_outputs=1024)
+                ent_point_nets['Logits'] = self.logits
+                ent_point_nets['Predictions'] = prediction_fn(self.logits, scope='Predictions')
+                self.read_out_logits = ent_point_nets['Predictions']
 
-        return logits, ent_point_nets
+    def init_train_test_op(self):
+        # some loss functions and all -> total loss
+        self.loss_function = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y,
+                                                                                    logits=self.read_out_logits))
+        # training op
+        self.training_op = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss_function)
+        self.predict_op = tf.arg_max(self.read_out_logits, 1)
+        # predict
+        predict_matches = tf.equal(tf.arg_max(self.y, dimension=1),
+                                   tf.arg_max(self.read_out_logits, 1))
+        # accuracy metric
+        self.accuracy = tf.reduce_mean(tf.cast(predict_matches, tf.float32))
+
+    def train(self, x, y, learning_rate, keep_prob=0.5):
+        feed_dict = {
+            self.x: x,
+            self.y: y,
+            self.keep_prob: keep_prob,
+            self.learning_rate: learning_rate
+        }
+        _, train_loss = self.sess.run([self.training_op, self.loss_function], feed_dict=feed_dict)
+        train_accuracy = self.get_accuracy(x, y)
+        return train_loss, train_accuracy
+
+    def classify(self, features_x):
+        feed_dict = {self.x: features_x, self.keep_prob: 1.0}
+        predict_y, prob = self.sess.run([self.predict_op, self.read_out_logits], feed_dict=feed_dict)
+        return predict_y, prob
+
+    def get_accuracy(self, x, y):
+        feed_dict = {
+            self.x: x,
+            self.y: y,
+            self.keep_prob: 1.0
+        }
+        accuracy = self.sess.run(self.accuracy, feed_dict=feed_dict)
+        return accuracy
+
+    def init(self):
+        self.build_inception_v1()
+        self.init_train_test_op()
+        self.sess = tf.Session()
+        init_op = tf.global_variables_initializer()
+        self.sess.run(init_op)
+        self.load_pretrained_model()
+
+    def load_pretrained_model(self):
+        """
+        Load the pretrained weights into the non-trainable layer
+        :return:
+        """
+        print('Load the pretrained weights into the non-trainable layer...')
+        variables_to_restore = slim.get_variables_to_restore(exclude=self.skip_layer)
+        init_fn = slim.assign_from_checkpoint_fn(self.pre_trained_model, variables_to_restore)
+        init_fn(self.sess)
