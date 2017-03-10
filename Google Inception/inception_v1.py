@@ -30,7 +30,7 @@ class GoogleInceptionV1(object):
         # 指定跳过加载 pre-trained 层
         self.skip_layer = skip_layer
         if pre_trained_model == 'DEFAULT':
-            self.pre_trained_model = 'inception_v1.ckpt'
+            self.pre_trained_model = './inception_v1.ckpt'
         else:
             self.pre_trained_model = pre_trained_model
 
@@ -49,7 +49,7 @@ class GoogleInceptionV1(object):
         ent_point_nets = {}
         with tf.variable_scope(scope, default_name='InceptionV1', values=[inputs]):
             with slim.arg_scope([slim.conv2d, slim.fully_connected], activation_fn=tf.nn.relu,
-                                weights_initializer=slim.initializers.xavier_initializer):
+                                weights_initializer=slim.initializers.variance_scaling_initializer()):
                 with slim.arg_scope([slim.conv2d, slim.max_pool2d], stride=1, padding='SAME'):
                     end_point = 'Conv2d_1a_7x7'
                     net = slim.conv2d(inputs, num_outputs=64, kernel_size=[7, 7], stride=2, scope=end_point)
@@ -300,11 +300,11 @@ class GoogleInceptionV1(object):
         with tf.variable_scope(name_or_scope=scope) as scope:
             net, ent_point_nets = self.inception_v1_base(self.x, scope=scope)
             with tf.variable_scope('Logits'):
-                net = slim.avg_pool2d(net, kernel_size=[7, 7], str=1, scope='MaxPool_0a_7x7')
+                net = slim.avg_pool2d(net, kernel_size=[7, 7], stride=1, scope='MaxPool_0a_7x7')
                 net = slim.dropout(net, self.keep_prob, scope='Dropout_0b')
                 self.logits = slim.fully_connected(net, num_outputs=1024)
                 ent_point_nets['Logits'] = self.logits
-                ent_point_nets['Predictions'] = prediction_fn(self.logits, scope='Predictions')
+                ent_point_nets['Predictions'] = prediction_fn(self.logits, name='Predictions')
                 self.read_out_logits = ent_point_nets['Predictions']
 
     def init_train_test_op(self):
