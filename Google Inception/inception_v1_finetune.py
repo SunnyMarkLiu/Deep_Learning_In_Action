@@ -20,20 +20,22 @@ train_split = 0.85  # training/validation split
 data = h5py.File(utils.train_mnist_2_vggnet_size_file, 'r')
 images = data['images'][:]
 labels = data['labels'][:]
-
+del data
 # split data into training and validation sets
 train_samples = int(len(images) * train_split)
 train_features = images[:train_samples]
 train_labels = labels[:train_samples]
 validation_features = images[train_samples:]
 validation_labels = labels[train_samples:]
+del images
+del labels
 
 print('load train datas done.')
 
 # Parameters
-learning_rate = 0.001
+learning_rate = 0.0001
 training_epochs = 10
-batch_size = 200
+batch_size = 100
 display_step = 1
 train_layers = ['beta1_power', 'beta2_power', 'fc8', 'fc7']
 total_batch = int(train_samples / batch_size)
