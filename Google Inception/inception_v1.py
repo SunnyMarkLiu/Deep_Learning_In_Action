@@ -18,6 +18,7 @@ Pre-trained model layers infor：
 
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
+from tensorflow.python import pywrap_tensorflow
 
 
 class GoogleInceptionV1(object):
@@ -297,7 +298,7 @@ class GoogleInceptionV1(object):
         # dropout layer: keep probability, vgg default value:0.5
         self.keep_prob = tf.placeholder(tf.float32, name='keep_prob')
 
-        with tf.variable_scope(name_or_scope=scope) as scope:
+        with tf.variable_scope(name_or_scope=scope, reuse=False) as scope:
             net, ent_point_nets = self.inception_v1_base(self.x, scope=scope)
             with tf.variable_scope('Logits'):
                 net = slim.avg_pool2d(net, kernel_size=[7, 7], stride=1, scope='MaxPool_0a_7x7')
@@ -358,6 +359,17 @@ class GoogleInceptionV1(object):
         :return:
         """
         print('Load the pretrained weights into the non-trainable layer...')
-        variables_to_restore = slim.get_variables_to_restore(exclude=self.skip_layer)
-        init_fn = slim.assign_from_checkpoint_fn(self.pre_trained_model, variables_to_restore)
-        init_fn(self.sess)
+        trainable_variables = slim.get_trainable_variables()
+
+        reader = pywrap_tensorflow.NewCheckpointReader('./inception_v1.ckpt')
+        pretrained_model_variables = reader.get_variable_to_shape_map()
+        for variable in trainable_variables:
+            variable_name = variable.name.split(':')[0]
+            if variable_name in self.skip_layer:
+                continue
+            if variable_name not in pretrained_model_variables:
+                continue
+            with tf.variable_scope('', reuse=True):
+                var = tf.get_variable(variable_name, trainable=False)
+                data = reader.get_tensor(variable_name)
+                self.sess.run(var.assign(data))

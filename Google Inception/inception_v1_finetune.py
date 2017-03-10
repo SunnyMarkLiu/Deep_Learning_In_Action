@@ -33,7 +33,7 @@ train_split = 0.85  # training/validation split
 # training_epochs = 10
 # batch_size = 200
 # display_step = 1
-train_layers = ['fc8', 'fc7']
+train_layers = ['beta1_power', 'beta2_power', 'fc8', 'fc7']
 # total_batch = int(train_samples / batch_size)
 
 inceptionv1 = GoogleInceptionV1(num_classes=num_classes, skip_layer=train_layers)
