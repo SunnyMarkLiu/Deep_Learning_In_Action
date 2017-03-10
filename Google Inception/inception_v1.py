@@ -285,7 +285,7 @@ class GoogleInceptionV1(object):
 
                 raise ValueError('Unknown final endpoint %s' % final_endpoint)
 
-    def build_model(self):
+    def build_inception_v1(self, prediction_fn=tf.nn.relu, scope='InceptionV1'):
         """
         build basic inception v1 model
         """
@@ -297,3 +297,14 @@ class GoogleInceptionV1(object):
         self.learning_rate = tf.placeholder(tf.float32, name='learning_rate')
         # dropout layer: keep probability, vgg default value:0.5
         self.keep_prob = tf.placeholder(tf.float32, name='keep_prob')
+
+        with tf.variable_scope(name_or_scope=scope) as scope:
+            net, ent_point_nets = self.inception_v1_base(self.x, scope=scope)
+            with tf.variable_scope('Logits'):
+                net = slim.avg_pool2d(net, kernel_size=[7, 7], str=1, scope='MaxPool_0a_7x7')
+                net = slim.dropout(net, self.keep_prob, scope='Dropout_0b')
+                logits = slim.fully_connected(net, num_outputs=1024)
+                ent_point_nets['Logits'] = logits
+                ent_point_nets['Predictions'] = prediction_fn(logits, scope='Predictions')
+
+        return logits, ent_point_nets
