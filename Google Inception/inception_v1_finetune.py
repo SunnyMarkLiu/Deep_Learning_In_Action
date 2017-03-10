@@ -28,6 +28,8 @@ train_labels = labels[:train_samples]
 validation_features = images[train_samples:]
 validation_labels = labels[train_samples:]
 
+print('load train datas done.')
+
 # Parameters
 learning_rate = 0.001
 training_epochs = 10
@@ -36,6 +38,7 @@ display_step = 1
 train_layers = ['beta1_power', 'beta2_power', 'fc8', 'fc7']
 total_batch = int(train_samples / batch_size)
 
+print('create google inception v1 model...')
 inceptionv1 = GoogleInceptionV1(num_classes=num_classes, skip_layer=train_layers,
                                 pre_trained_model_cpkt=utils.pre_trained_inception_v1_model)
 inceptionv1.init()
@@ -45,7 +48,7 @@ train_datas = DataWapper(train_features, train_labels)
 validate_datas = DataWapper(validation_features, validation_labels)
 
 # training
-print('Train model ...')
+print('Training model ...')
 for epoch in range(0, training_epochs):
     avg_loss = 0.
     for i in range(0, total_batch):

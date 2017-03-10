@@ -303,10 +303,10 @@ class GoogleInceptionV1(object):
             with tf.variable_scope('Logits'):
                 net = slim.avg_pool2d(net, kernel_size=[7, 7], stride=1, scope='MaxPool_0a_7x7')
                 net = slim.dropout(net, self.keep_prob, scope='Dropout_0b')
-                self.logits = slim.fully_connected(net, num_outputs=1024)
-                ent_point_nets['Logits'] = self.logits
-                ent_point_nets['Predictions'] = prediction_fn(self.logits, name='Predictions')
-                self.read_out_logits = ent_point_nets['Predictions']
+                # translate [1, 1, 1024] -> [1024]
+                net = net[:, 0, 0, :]
+                self.logits = slim.fully_connected(net, num_outputs=self.num_classes)
+                self.read_out_logits = prediction_fn(self.logits, name='Predictions')
 
     def init_train_test_op(self):
         # some loss functions and all -> total loss
