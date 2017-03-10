@@ -69,7 +69,7 @@ for epoch in range(0, training_epochs):
 print('Train end.')
 print('Predict ...')
 print('load test datas...')
-data = h5py.File(utils.test_mnist_2_imagenet_size_file, 'r')
+data = h5py.File(utils.test_mnist_2_vggnet_size_file, 'r')
 test_images = data['images'][:]
 test_labels = data['labels'][:]
 print('load datas done!')

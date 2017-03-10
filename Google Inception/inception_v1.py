@@ -15,6 +15,9 @@ Pre-trained model layers infor：
 @author: MarkLiu
 @time  : 17-3-8 下午1:35
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
