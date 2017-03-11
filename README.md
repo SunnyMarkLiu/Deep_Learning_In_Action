@@ -10,7 +10,7 @@ Learn and implement Deep learning models using [tensorflow 1.0](https://github.c
 2. [x] [Convolutional Neural Network](https://github.com/SunnyMarkLiu/deeplearning_in_action/tree/master/Basic%20CNN)
 3. [x] [Alexnet](https://github.com/SunnyMarkLiu/deeplearning_in_action/tree/master/Alexnet)
 4. [x] [VGGNet](https://github.com/SunnyMarkLiu/deeplearning_in_action/tree/master/VGGNet)
-5. [x] [Google Inception Net](https://github.com/SunnyMarkLiu/deeplearning_in_action/tree/master/Google%20Inception)
+5. [x] [Google Inception Net-V1](https://github.com/SunnyMarkLiu/deeplearning_in_action/tree/master/Google%20Inception)
 6. [ ] Network in Network
 7. [ ] Auto Encoder
 8. [ ] Highway Network
@@ -20,6 +20,7 @@ Learn and implement Deep learning models using [tensorflow 1.0](https://github.c
 12. [ ] Multilevel Residual Networks
 13. [ ] DenseNet
 14. [ ] Residual Network With Shared Weights
+15. ...
 
 ### Natural Language Processing
 1. [ ] Recurrent Neural Network
