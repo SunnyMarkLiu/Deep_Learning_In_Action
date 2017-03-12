@@ -38,8 +38,7 @@ class NetworkInNetwork(object):
         initial = tf.constant(np.random.rand(), shape=shape)
         return tf.Variable(initial, name=name)
 
-    def mlp_conv(self, x, kernel_size, stride, num_filters, micro_layer_size, name,
-                 final_pooling_kernel_size=None, final_pooling_stride=None, pooling=True):
+    def mlp_conv(self, x, kernel_size, stride, num_filters, micro_layer_size, name):
         """
         multi layer perceptron convolution.
 
@@ -50,16 +49,12 @@ class NetworkInNetwork(object):
         with tf.variable_scope(name, values=[x]):
             # first convolution
             net = slim.conv2d(inputs=x, num_outputs=num_filters, kernel_size=[kernel_size, kernel_size],
-                              stride=stride, scope='first_conv')
+                              stride=stride, scope='first_conv', padding='SAME')
             # cccp layer
             with slim.arg_scope([slim.conv2d], kernel_size=[1, 1], stride=1,
                                 padding='SAME', activation_fn=tf.nn.relu):
                 for hidden_i, hidden_size in enumerate(micro_layer_size):
                     net = slim.conv2d(net, hidden_size, scope='hidden_' + str(hidden_i))
-            # final max-pooling
-            if pooling:
-                net = slim.max_pool2d(net, kernel_size=final_pooling_kernel_size,
-                                      stride=final_pooling_stride, name='max_pooling')
         return net
 
     def golbal_average_pooling(self, x):
@@ -68,7 +63,7 @@ class NetworkInNetwork(object):
         :param x: [batch, height, width, channels]
         """
         ksize_height = x.get_shape()[0]
-        ksize_width = x.get_shape()[0]
+        ksize_width = x.get_shape()[1]
         return tf.nn.avg_pool(x, ksize=[1, ksize_height, ksize_width, 1], strides=[1, 1, 1, 1], padding='SAME')
 
     def build_nin_model(self):
@@ -81,25 +76,32 @@ class NetworkInNetwork(object):
         self.learning_rate = tf.placeholder(tf.float32, name='learning_rate')
         # dropout layer: keep probability, vgg default value:0.5
         self.keep_prob = tf.placeholder(tf.float32, name='keep_prob')
+        print('x:' + str(self.x.get_shape().as_list()))
 
         self.nin_lay_1 = self.mlp_conv(self.x, kernel_size=11, stride=4, num_filters=96,
-                                       micro_layer_size=[96, 96], final_pooling_kernel_size=3,
-                                       final_pooling_stride=2, name='nin_lay_1')
+                                       micro_layer_size=[96, 96], name='nin_lay_1')
+        # add dropout
+        dropout = slim.dropout(self.nin_lay_1, keep_prob=self.keep_prob)
+        self.maxpooling_1 = slim.max_pool2d(dropout, kernel_size=3, stride=2)
+        print('maxpooling_1:' + str(self.maxpooling_1.get_shape().as_list()))
 
-        self.nin_lay_2 = self.mlp_conv(self.nin_lay_1, kernel_size=5, stride=1, num_filters=256,
-                                       micro_layer_size=[256, 256], final_pooling_kernel_size=3,
-                                       final_pooling_stride=2, name='nin_lay_2')
+        self.nin_lay_2 = self.mlp_conv(self.maxpooling_1, kernel_size=5, stride=1, num_filters=256,
+                                       micro_layer_size=[256, 256], name='nin_lay_2')
+        # add dropout
+        dropout = slim.dropout(self.nin_lay_2, keep_prob=self.keep_prob)
+        self.maxpooling_2 = slim.max_pool2d(dropout, kernel_size=3, stride=2)
+        print('maxpooling_2:' + str(self.maxpooling_2.get_shape().as_list()))
 
-        self.nin_lay_3 = self.mlp_conv(self.nin_lay_2, kernel_size=3, stride=1, num_filters=384,
-                                       micro_layer_size=[384, 384], final_pooling_kernel_size=3,
-                                       final_pooling_stride=2, name='nin_lay_3')
+        self.nin_lay_3 = self.mlp_conv(self.maxpooling_2, kernel_size=3, stride=1, num_filters=384,
+                                       micro_layer_size=[384, 384], name='nin_lay_3')
+        # NO dropout
+        self.maxpooling_3 = slim.max_pool2d(dropout, kernel_size=3, stride=2)
+        print('maxpooling_3:' + str(self.maxpooling_3.get_shape().as_list()))
 
-        # dropout
-        self.dropout = slim.dropout(self.nin_lay_3, keep_prob=self.dropout)
+        self.nin_lay_4 = self.mlp_conv(self.maxpooling_3, kernel_size=3, stride=1, num_filters=1024,
+                                       micro_layer_size=[1024, self.num_classes], name='nin_lay_4')
 
-        self.nin_lay_4 = self.mlp_conv(self.dropout, kernel_size=3, stride=1, num_filters=1024,
-                                       micro_layer_size=[1024, self.num_classes], pooling=False,
-                                       name='nin_lay_4')
+        print('nin_lay_4:'+str(self.nin_lay_4.get_shape().as_list()))
         # golbal average pooling
         self.digits = self.golbal_average_pooling(self.nin_lay_4)
         # softmax
