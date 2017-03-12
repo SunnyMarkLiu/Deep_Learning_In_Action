@@ -20,7 +20,7 @@ Learn and implement Deep learning models using [tensorflow 1.0](https://github.c
 12. [ ] Multilevel Residual Networks
 13. [ ] DenseNet
 14. [ ] Residual Network With Shared Weights
-15. ...
+15. [ ] ...
 
 ### Natural Language Processing
 1. [ ] Recurrent Neural Network
