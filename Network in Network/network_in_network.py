@@ -52,7 +52,7 @@ class NetworkInNetwork(object):
                               stride=stride, scope='first_conv', padding='SAME')
             # cccp layer
             with slim.arg_scope([slim.conv2d], kernel_size=[1, 1], stride=1,
-                                padding='SAME', activation_fn=tf.nn.relu):
+                                padding='VALID', activation_fn=tf.nn.relu):
                 for hidden_i, hidden_size in enumerate(micro_layer_size):
                     net = slim.conv2d(net, hidden_size, scope='hidden_' + str(hidden_i))
         return net
@@ -62,9 +62,11 @@ class NetworkInNetwork(object):
         golbal average pooling
         :param x: [batch, height, width, channels]
         """
-        ksize_height = x.get_shape()[0]
-        ksize_width = x.get_shape()[1]
-        return tf.nn.avg_pool(x, ksize=[1, ksize_height, ksize_width, 1], strides=[1, 1, 1, 1], padding='SAME')
+        shapes = x.get_shape().as_list()
+        kernel_height = shapes[1]
+        kernel_width = shapes[2]
+        return slim.avg_pool2d(x, kernel_size=[kernel_height, kernel_width], stride=1, padding='VALID',
+                               scope='golbal_average_pooling')
 
     def build_nin_model(self):
         # input features
@@ -78,34 +80,37 @@ class NetworkInNetwork(object):
         self.keep_prob = tf.placeholder(tf.float32, name='keep_prob')
         print('x:' + str(self.x.get_shape().as_list()))
 
-        self.nin_lay_1 = self.mlp_conv(self.x, kernel_size=11, stride=4, num_filters=96,
+        self.nin_lay_1 = self.mlp_conv(self.x, kernel_size=11, stride=2, num_filters=96,
                                        micro_layer_size=[96, 96], name='nin_lay_1')
         # add dropout
         dropout = slim.dropout(self.nin_lay_1, keep_prob=self.keep_prob)
-        self.maxpooling_1 = slim.max_pool2d(dropout, kernel_size=3, stride=2)
+        self.maxpooling_1 = slim.max_pool2d(dropout, kernel_size=3, stride=2, padding='SAME')
         print('maxpooling_1:' + str(self.maxpooling_1.get_shape().as_list()))
 
         self.nin_lay_2 = self.mlp_conv(self.maxpooling_1, kernel_size=5, stride=1, num_filters=256,
                                        micro_layer_size=[256, 256], name='nin_lay_2')
         # add dropout
         dropout = slim.dropout(self.nin_lay_2, keep_prob=self.keep_prob)
-        self.maxpooling_2 = slim.max_pool2d(dropout, kernel_size=3, stride=2)
+        self.maxpooling_2 = slim.max_pool2d(dropout, kernel_size=3, stride=2, padding='SAME')
         print('maxpooling_2:' + str(self.maxpooling_2.get_shape().as_list()))
 
         self.nin_lay_3 = self.mlp_conv(self.maxpooling_2, kernel_size=3, stride=1, num_filters=384,
                                        micro_layer_size=[384, 384], name='nin_lay_3')
         # NO dropout
-        self.maxpooling_3 = slim.max_pool2d(dropout, kernel_size=3, stride=2)
+        self.maxpooling_3 = slim.max_pool2d(self.nin_lay_3, kernel_size=3, stride=2, padding='SAME')
         print('maxpooling_3:' + str(self.maxpooling_3.get_shape().as_list()))
 
         self.nin_lay_4 = self.mlp_conv(self.maxpooling_3, kernel_size=3, stride=1, num_filters=1024,
                                        micro_layer_size=[1024, self.num_classes], name='nin_lay_4')
-
-        print('nin_lay_4:'+str(self.nin_lay_4.get_shape().as_list()))
+        self.maxpooling_4 = slim.max_pool2d(self.nin_lay_4, kernel_size=3, stride=2, padding='SAME')
+        print('maxpooling_4:' + str(self.maxpooling_4.get_shape().as_list()))
         # golbal average pooling
         self.digits = self.golbal_average_pooling(self.nin_lay_4)
+        self.digits = self.digits[:, 0, 0, :]
+        print('golbal_average_pooling:' + str(self.digits.get_shape().as_list()))
         # softmax
         self.read_out_logits = tf.nn.softmax(self.digits)
+        print('read_out_logits:' + str(self.read_out_logits.get_shape().as_list()))
 
     def init_train_test_op(self):
         # some loss functions and all -> total loss
