@@ -12,7 +12,7 @@ Learn and implement Deep learning models using [tensorflow 1.0](https://github.c
 4. [x] [VGGNet](https://github.com/SunnyMarkLiu/deeplearning_in_action/tree/master/VGGNet)
 5. [x] [Google Inception Net-V1](https://github.com/SunnyMarkLiu/deeplearning_in_action/tree/master/Google%20Inception)
 6. [x] [Network in Network](https://github.com/SunnyMarkLiu/Deep_Learning_In_Action/tree/master/Network%20in%20Network)
-7. [ ] Auto Encoder
+7. [x] [Auto Encoder](https://github.com/SunnyMarkLiu/Deep_Learning_In_Action/tree/master/Auto%20Encoder)
 8. [ ] Highway Network
 9. [ ] Original Redisual Network
 10. [ ] Pre-activation Residual Network
