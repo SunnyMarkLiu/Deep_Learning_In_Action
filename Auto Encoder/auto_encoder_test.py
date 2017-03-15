@@ -8,14 +8,14 @@
 import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 from auto_encoder import Autoencoders
+import numpy as np
 import utils
 import matplotlib as mpl
 import sklearn.preprocessing as prep
 import matplotlib.pyplot as plt
 
 print('load datas...')
-mnist = input_data.read_data_sets('../input_datas/mnist/', one_hot=True)
-# mnist = input_data.read_data_sets(utils.mnist_dir, one_hot=True)
+mnist = input_data.read_data_sets(utils.mnist_dir, one_hot=True)
 image_width = 28
 image_height = 28
 labels_size = 10
@@ -41,7 +41,7 @@ for epoch in range(0, training_epochs):
     if epoch % display_step == 0:
         print("Epoch: %04d, cost=%.9f" % (epoch + 1, avg_cost))
 
-    if epoch % 20 == 0:
+    if epoch % 40 == 0:
         learning_rate /= 2
 
 print("Training Finished!")
@@ -54,6 +54,7 @@ preprocessor = prep.MinMaxScaler().fit(hidden_layer1_weights)
 hidden_layer1_weights = preprocessor.transform(hidden_layer1_weights)
 
 hidden_layer1_weights = hidden_layer1_weights.reshape((28, 28, 100))
+hidden_layer1_weights /= np.sum(np.power(hidden_layer1_weights, 2))
 hidden_layer1_weights *= 255
 fig = plt.figure()
 for i in range(100):
