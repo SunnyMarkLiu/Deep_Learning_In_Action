@@ -67,24 +67,36 @@ class Autoencoders(object):
         init_op = tf.global_variables_initializer()
         self.sess.run(init_op)
 
+    def train(self, x, learning_rate, keep_prob=0.5):
+        cost, _ = self.sess.run((self.loss_function, self.training_op), feed_dict={self.x: x,
+                                                                                   self.learning_rate: learning_rate,
+                                                                                   self.keep_prob: keep_prob})
+        return cost
+
     def encode(self, x):
         """
         encode input
         """
-        return self.sess.run(self.hidden_layer_2, feed_dict={self.x: x})
+        return self.sess.run(self.hidden_layer_2, feed_dict={self.x: x,
+                                                             self.keep_prob: 1})
 
     def decode(self, x):
         """
         decode hidden layer output
         """
-        return self.sess.run(self.reconstruction, feed_dict={self.x: x})
+        return self.sess.run(self.reconstruction, feed_dict={self.x: x,
+                                                             self.keep_prob: 1})
+
+    def calc_total_cost(self, x):
+        return self.sess.run(self.loss_function, feed_dict={self.x: x,
+                                                            self.keep_prob: 1})
 
     def get_weights(self, scope_name):
-        with tf.variable_scope(scope_name):
+        with tf.variable_scope(scope_name, reuse=True):
             weights = tf.get_variable('weights')
         return self.sess.run(weights)
 
     def get_biases(self, scope_name):
-        with tf.variable_scope(scope_name):
+        with tf.variable_scope(scope_name, reuse=True):
             weights = tf.get_variable('biases')
         return self.sess.run(weights)
